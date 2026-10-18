@@ -1,14 +1,9 @@
-# 示例科技开发者平台 · Python 技术参考（节选自 Python 3.13 官方中文文档）
+# 示例科技开发者平台 · Python 技术参考（节选自 Python 3 官方中文文档）
 
 > 来源：Python 官方中文文档 https://docs.python.org/zh-cn/3/library/venv.html
 > 说明：本文件为真实开源文档节选，用于企业知识库产品手册 demo 语料。
 
 venv --- 虚拟环境的创建 — Python 3.15.0 文档
-主题
-自动
-明亮
-黑暗
-目录
 venv
 --- 虚拟环境的创建
 创建虚拟环境
@@ -17,26 +12,14 @@ API
 一个扩展
 EnvBuilder
 的例子
-上一主题
 ensurepip
 --- 初始设置
 pip
 安装器
-下一主题
 zipapp
 --- 管理可执行的 Python zip 归档文件
-当前页
-报告代码错误
-改进本页面
-显示源码
-显示翻译源
-导航
-索引
-模块
 |
-下一页
 |
-上一页
 |
 Python
 »
@@ -49,10 +32,6 @@ The Python standard library
 venv
 --- 虚拟环境的创建
 |
-主题
-自动
-明亮
-黑暗
 |
 venv
 --- 虚拟环境的创建
@@ -103,10 +82,11 @@ WebAssembly 平台
 是通过执行
 venv
 模块来创建的：
-python
--m
-venv
-/path/to/new/virtual/environment
+
+```
+python -m venv /path/to/new/virtual/environment
+```
+
 此命令会创建目标目录（必要时还包括父目录）并在其中放置一个
 pyvenv.cfg
 文件，文件带有一个指向运行此命令的 Python 安装版的
@@ -132,24 +112,16 @@ venv
 在 Windows 上，像下面这样唤起
 venv
 命令：
-PS>
-python
--m
-venv
-C
-:\
-path
-\
-to
-\
-new
-\
-virtual
-\
-environment
+
+```
+PS> python -m venv C:\path\to\new\virtual\environment
+```
+
 本命令如果以
 -h
 参数运行，将显示可用的选项:
+
+```
 usage: venv [-h] [--system-site-packages] [--symlinks | --copies] [--clear]
             [--upgrade] [--without-pip] [--prompt PROMPT] [--upgrade-deps]
             [--without-scm-ignore-files]
@@ -159,6 +131,8 @@ Creates virtual Python environments in one or more target directories.
 
 Once an environment has been created, you may wish to activate it, e.g. by
 sourcing an activate script in its bin directory.
+```
+
 ENV_DIR
 ¶
 一个必需参数，用于指定创建环境所在的目录。
@@ -227,14 +201,11 @@ python.exe
 在 Microsoft Windows 上，为了启用
 Activate.ps1
 脚本，可能需要修改用户的执行策略。可以运行以下 PowerShell 命令来执行此操作：
-PS
-C
-:\>
-Set-ExecutionPolicy
--ExecutionPolicy
-RemoteSigned
--Scope
-CurrentUser
+
+```
+PS C:\> Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
 参阅
 About Execution Policies
 以获取更多信息。
@@ -470,59 +441,21 @@ EnvBuilder
 类的
 create
 方法定义了可用于定制子类的钩子:
-def
-create
-(
-self
-,
-env_dir
-):
-"""
-在一个目录中创建虚拟的 Python 环境。
-env_dir 是用于创建环境的目标目录。
-"""
-env_dir
-=
-os
-.
-path
-.
-abspath
-(
-env_dir
-)
-context
-=
-self
-.
-ensure_directories
-(
-env_dir
-)
-self
-.
-create_configuration
-(
-context
-)
-self
-.
-setup_python
-(
-context
-)
-self
-.
-setup_scripts
-(
-context
-)
-self
-.
-post_setup
-(
-context
-)
+
+```
+def create(self, env_dir):
+    """
+    在一个目录中创建虚拟的 Python 环境。
+    env_dir 是用于创建环境的目标目录。
+    """
+    env_dir = os.path.abspath(env_dir)
+    context = self.ensure_directories(env_dir)
+    self.create_configuration(context)
+    self.setup_python(context)
+    self.setup_scripts(context)
+    self.post_setup(context)
+```
+
 每个方法
 ensure_directories()
 ,
@@ -777,974 +710,219 @@ EnvBuilder
 下面的脚本展示了如何通过实现一个子类来扩展
 EnvBuilder
 。这个子类会安装 setuptools 和 pip 到被创建的虚拟环境中。
-import
-os
-import
-os.path
-from
-subprocess
-import
-Popen
-,
-PIPE
-import
-sys
-from
-threading
-import
-Thread
-from
-urllib.parse
-import
-urlsplit
-from
-urllib.request
-import
-urlretrieve
-import
-venv
-class
-ExtendedEnvBuilder
-(
-venv
-.
-EnvBuilder
-):
-"""
-This builder installs setuptools and pip so that you can pip or
-easy_install other packages into the created virtual environment.
-:param nodist: If true, setuptools and pip are not installed into the
-created virtual environment.
-:param nopip: If true, pip is not installed into the created
-virtual environment.
-:param progress: If setuptools or pip are installed, the progress of the
-installation can be monitored by passing a progress
-callable. If specified, it is called with two
-arguments: a string indicating some progress, and a
-context indicating where the string is coming from.
-The context argument can have one of three values:
-'main', indicating that it is called from virtualize()
-itself, and 'stdout' and 'stderr', which are obtained
-by reading lines from the output streams of a subprocess
-which is used to install the app.
-If a callable is not specified, default progress
-information is output to sys.stderr.
-"""
-def
-__init__
-(
-self
-,
-*
-args
-,
-**
-kwargs
-):
-self
-.
-nodist
-=
-kwargs
-.
-pop
-(
-'nodist'
-,
-False
-)
-self
-.
-nopip
-=
-kwargs
-.
-pop
-(
-'nopip'
-,
-False
-)
-self
-.
-progress
-=
-kwargs
-.
-pop
-(
-'progress'
-,
-None
-)
-self
-.
-verbose
-=
-kwargs
-.
-pop
-(
-'verbose'
-,
-False
-)
-super
-()
-.
-__init__
-(
-*
-args
-,
-**
-kwargs
-)
-def
-post_setup
-(
-self
-,
-context
-):
-"""
-Set up any packages which need to be pre-installed into the
-virtual environment being created.
-:param context: The information for the virtual environment
-creation request being processed.
-"""
-os
-.
-environ
-[
-'VIRTUAL_ENV'
-]
-=
-context
-.
-env_dir
-if
-not
-self
-.
-nodist
-:
-self
-.
-install_setuptools
-(
-context
-)
-# 没有 setuptools 无法安装 pip
-if
-not
-self
-.
-nopip
-and
-not
-self
-.
-nodist
-:
-self
-.
-install_pip
-(
-context
-)
-def
-reader
-(
-self
-,
-stream
-,
-context
-):
-"""
-Read lines from a subprocess' output stream and either pass to a progress
-callable (if specified) or write progress information to sys.stderr.
-"""
-progress
-=
-self
-.
-progress
-while
-True
-:
-s
-=
-stream
-.
-readline
-()
-if
-not
-s
-:
-break
-if
-progress
-is
-not
-None
-:
-progress
-(
-s
-,
-context
-)
-else
-:
-if
-not
-self
-.
-verbose
-:
-sys
-.
-stderr
-.
-write
-(
-'.'
-)
-else
-:
-sys
-.
-stderr
-.
-write
-(
-s
-.
-decode
-(
-'utf-8'
-))
-sys
-.
-stderr
-.
-flush
-()
-stream
-.
-close
-()
-def
-install_script
-(
-self
-,
-context
-,
-name
-,
-url
-):
-_
-,
-_
-,
-path
-,
-_
-,
-_
-=
-urlsplit
-(
-url
-)
-fn
-=
-os
-.
-path
-.
-split
-(
-path
-)[
--
-1
-]
-binpath
-=
-context
-.
-bin_path
-distpath
-=
-os
-.
-path
-.
-join
-(
-binpath
-,
-fn
-)
-# 将脚本下载到虚拟环境的二进制文件目录
-urlretrieve
-(
-url
-,
-distpath
-)
-progress
-=
-self
-.
-progress
-if
-self
-.
-verbose
-:
-term
-=
-'
-\n
-'
-else
-:
-term
-=
-''
-if
-progress
-is
-not
-None
-:
-progress
-(
-'Installing
-%s
-...
-%s
-'
-%
-(
-name
-,
-term
-),
-'main'
-)
-else
-:
-sys
-.
-stderr
-.
-write
-(
-'Installing
-%s
-...
-%s
-'
-%
-(
-name
-,
-term
-))
-sys
-.
-stderr
-.
-flush
-()
-# 在虚拟环境中安装
-args
-=
-[
-context
-.
-env_exe
-,
-fn
-]
-p
-=
-Popen
-(
-args
-,
-stdout
-=
-PIPE
-,
-stderr
-=
-PIPE
-,
-cwd
-=
-binpath
-)
-t1
-=
-Thread
-(
-target
-=
-self
-.
-reader
-,
-args
-=
-(
-p
-.
-stdout
-,
-'stdout'
-))
-t1
-.
-start
-()
-t2
-=
-Thread
-(
-target
-=
-self
-.
-reader
-,
-args
-=
-(
-p
-.
-stderr
-,
-'stderr'
-))
-t2
-.
-start
-()
-p
-.
-wait
-()
-t1
-.
-join
-()
-t2
-.
-join
-()
-if
-progress
-is
-not
-None
-:
-progress
-(
-'done.'
-,
-'main'
-)
-else
-:
-sys
-.
-stderr
-.
-write
-(
-'done.
-\n
-'
-)
-# 清理不再需要的东西
-os
-.
-unlink
-(
-distpath
-)
-def
-install_setuptools
-(
-self
-,
-context
-):
-"""
-Install setuptools in the virtual environment.
-:param context: The information for the virtual environment
-creation request being processed.
-"""
-url
-=
-"https://bootstrap.pypa.io/ez_setup.py"
-self
-.
-install_script
-(
-context
-,
-'setuptools'
-,
-url
-)
-# 清理下载的 setuptools 归档
-pred
-=
-lambda
-o
-:
-o
-.
-startswith
-(
-'setuptools-'
-)
-and
-o
-.
-endswith
-(
-'.tar.gz'
-)
-files
-=
-filter
-(
-pred
-,
-os
-.
-listdir
-(
-context
-.
-bin_path
-))
-for
-f
-in
-files
-:
-f
-=
-os
-.
-path
-.
-join
-(
-context
-.
-bin_path
-,
-f
-)
-os
-.
-unlink
-(
-f
-)
-def
-install_pip
-(
-self
-,
-context
-):
-"""
-Install pip in the virtual environment.
-:param context: The information for the virtual environment
-creation request being processed.
-"""
-url
-=
-'https://bootstrap.pypa.io/get-pip.py'
-self
-.
-install_script
-(
-context
-,
-'pip'
-,
-url
-)
-def
-main
-(
-args
-=
-None
-):
-import
-argparse
-parser
-=
-argparse
-.
-ArgumentParser
-(
-prog
-=
-__name__
-,
-description
-=
-'Creates virtual Python '
-'environments in one or '
-'more target '
-'directories.'
-)
-parser
-.
-add_argument
-(
-'dirs'
-,
-metavar
-=
-'ENV_DIR'
-,
-nargs
-=
-'+'
-,
-help
-=
-'A directory in which to create the '
-'virtual environment.'
-)
-parser
-.
-add_argument
-(
-'--no-setuptools'
-,
-default
-=
-False
-,
-action
-=
-'store_true'
-,
-dest
-=
-'nodist'
-,
-help
-=
-"Don't install setuptools or pip in the "
-"virtual environment."
-)
-parser
-.
-add_argument
-(
-'--no-pip'
-,
-default
-=
-False
-,
-action
-=
-'store_true'
-,
-dest
-=
-'nopip'
-,
-help
-=
-"Don't install pip in the virtual "
-"environment."
-)
-parser
-.
-add_argument
-(
-'--system-site-packages'
-,
-default
-=
-False
-,
-action
-=
-'store_true'
-,
-dest
-=
-'system_site'
-,
-help
-=
-'Give the virtual environment access to the '
-'system site-packages dir.'
-)
-if
-os
-.
-name
-==
-'nt'
-:
-use_symlinks
-=
-False
-else
-:
-use_symlinks
-=
-True
-parser
-.
-add_argument
-(
-'--symlinks'
-,
-default
-=
-use_symlinks
-,
-action
-=
-'store_true'
-,
-dest
-=
-'symlinks'
-,
-help
-=
-'Try to use symlinks rather than copies, '
-'when symlinks are not the default for '
-'the platform.'
-)
-parser
-.
-add_argument
-(
-'--clear'
-,
-default
-=
-False
-,
-action
-=
-'store_true'
-,
-dest
-=
-'clear'
-,
-help
-=
-'Delete the contents of the '
-'virtual environment '
-'directory if it already '
-'exists, before virtual '
-'environment creation.'
-)
-parser
-.
-add_argument
-(
-'--upgrade'
-,
-default
-=
-False
-,
-action
-=
-'store_true'
-,
-dest
-=
-'upgrade'
-,
-help
-=
-'Upgrade the virtual '
-'environment directory to '
-'use this version of '
-'Python, assuming Python '
-'has been upgraded '
-'in-place.'
-)
-parser
-.
-add_argument
-(
-'--verbose'
-,
-default
-=
-False
-,
-action
-=
-'store_true'
-,
-dest
-=
-'verbose'
-,
-help
-=
-'Display the output '
-'from the scripts which '
-'install setuptools and pip.'
-)
-options
-=
-parser
-.
-parse_args
-(
-args
-)
-if
-options
-.
-upgrade
-and
-options
-.
-clear
-:
-raise
-ValueError
-(
-'you cannot supply --upgrade and --clear together.'
-)
-builder
-=
-ExtendedEnvBuilder
-(
-system_site_packages
-=
-options
-.
-system_site
-,
-clear
-=
-options
-.
-clear
-,
-symlinks
-=
-options
-.
-symlinks
-,
-upgrade
-=
-options
-.
-upgrade
-,
-nodist
-=
-options
-.
-nodist
-,
-nopip
-=
-options
-.
-nopip
-,
-verbose
-=
-options
-.
-verbose
-)
-for
-d
-in
-options
-.
-dirs
-:
-builder
-.
-create
-(
-d
-)
-if
-__name__
-==
-'__main__'
-:
-rc
-=
-1
-try
-:
-main
-()
-rc
-=
-0
-except
-Exception
-as
-e
-:
-print
-(
-'Error:
-%s
-'
-%
-e
-,
-file
-=
-sys
-.
-stderr
-)
-sys
-.
-exit
-(
-rc
-)
+
+```
+import os
+import os.path
+from subprocess import Popen, PIPE
+import sys
+from threading import Thread
+from urllib.parse import urlsplit
+from urllib.request import urlretrieve
+import venv
+
+class ExtendedEnvBuilder(venv.EnvBuilder):
+    """
+    This builder installs setuptools and pip so that you can pip or
+    easy_install other packages into the created virtual environment.
+
+    :param nodist: If true, setuptools and pip are not installed into the
+                   created virtual environment.
+    :param nopip: If true, pip is not installed into the created
+                  virtual environment.
+    :param progress: If setuptools or pip are installed, the progress of the
+                     installation can be monitored by passing a progress
+                     callable. If specified, it is called with two
+                     arguments: a string indicating some progress, and a
+                     context indicating where the string is coming from.
+                     The context argument can have one of three values:
+                     'main', indicating that it is called from virtualize()
+                     itself, and 'stdout' and 'stderr', which are obtained
+                     by reading lines from the output streams of a subprocess
+                     which is used to install the app.
+
+                     If a callable is not specified, default progress
+                     information is output to sys.stderr.
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.nodist = kwargs.pop('nodist', False)
+        self.nopip = kwargs.pop('nopip', False)
+        self.progress = kwargs.pop('progress', None)
+        self.verbose = kwargs.pop('verbose', False)
+        super().__init__(*args, **kwargs)
+
+    def post_setup(self, context):
+        """
+        Set up any packages which need to be pre-installed into the
+        virtual environment being created.
+
+        :param context: The information for the virtual environment
+                        creation request being processed.
+        """
+        os.environ['VIRTUAL_ENV'] = context.env_dir
+        if not self.nodist:
+            self.install_setuptools(context)
+        # 没有 setuptools 无法安装 pip
+        if not self.nopip and not self.nodist:
+            self.install_pip(context)
+
+    def reader(self, stream, context):
+        """
+        Read lines from a subprocess' output stream and either pass to a progress
+        callable (if specified) or write progress information to sys.stderr.
+        """
+        progress = self.progress
+        while True:
+            s = stream.readline()
+            if not s:
+                break
+            if progress is not None:
+                progress(s, context)
+            else:
+                if not self.verbose:
+                    sys.stderr.write('.')
+                else:
+                    sys.stderr.write(s.decode('utf-8'))
+                sys.stderr.flush()
+        stream.close()
+
+    def install_script(self, context, name, url):
+        _, _, path, _, _ = urlsplit(url)
+        fn = os.path.split(path)[-1]
+        binpath = context.bin_path
+        distpath = os.path.join(binpath, fn)
+        # 将脚本下载到虚拟环境的二进制文件目录
+        urlretrieve(url, distpath)
+        progress = self.progress
+        if self.verbose:
+            term = '\n'
+        else:
+            term = ''
+        if progress is not None:
+            progress('Installing %s ...%s' % (name, term), 'main')
+        else:
+            sys.stderr.write('Installing %s ...%s' % (name, term))
+            sys.stderr.flush()
+        # 在虚拟环境中安装
+        args = [context.env_exe, fn]
+        p = Popen(args, stdout=PIPE, stderr=PIPE, cwd=binpath)
+        t1 = Thread(target=self.reader, args=(p.stdout, 'stdout'))
+        t1.start()
+        t2 = Thread(target=self.reader, args=(p.stderr, 'stderr'))
+        t2.start()
+        p.wait()
+        t1.join()
+        t2.join()
+        if progress is not None:
+            progress('done.', 'main')
+        else:
+            sys.stderr.write('done.\n')
+        # 清理不再需要的东西
+        os.unlink(distpath)
+
+    def install_setuptools(self, context):
+        """
+        Install setuptools in the virtual environment.
+
+        :param context: The information for the virtual environment
+                        creation request being processed.
+        """
+        url = "https://bootstrap.pypa.io/ez_setup.py"
+        self.install_script(context, 'setuptools', url)
+        # 清理下载的 setuptools 归档
+        pred = lambda o: o.startswith('setuptools-') and o.endswith('.tar.gz')
+        files = filter(pred, os.listdir(context.bin_path))
+        for f in files:
+            f = os.path.join(context.bin_path, f)
+            os.unlink(f)
+
+    def install_pip(self, context):
+        """
+        Install pip in the virtual environment.
+
+        :param context: The information for the virtual environment
+                        creation request being processed.
+        """
+        url = 'https://bootstrap.pypa.io/get-pip.py'
+        self.install_script(context, 'pip', url)
+
+
+def main(args=None):
+    import argparse
+
+    parser = argparse.ArgumentParser(prog=__name__,
+                                     description='Creates virtual Python '
+                                                 'environments in one or '
+                                                 'more target '
+                                                 'directories.')
+    parser.add_argument('dirs', metavar='ENV_DIR', nargs='+',
+                        help='A directory in which to create the '
+                             'virtual environment.')
+    parser.add_argument('--no-setuptools', default=False,
+                        action='store_true', dest='nodist',
+                        help="Don't install setuptools or pip in the "
+                             "virtual environment.")
+    parser.add_argument('--no-pip', default=False,
+                        action='store_true', dest='nopip',
+                        help="Don't install pip in the virtual "
+                             "environment.")
+    parser.add_argument('--system-site-packages', default=False,
+                        action='store_true', dest='system_site',
+                        help='Give the virtual environment access to the '
+                             'system site-packages dir.')
+    if os.name == 'nt':
+        use_symlinks = False
+    else:
+        use_symlinks = True
+    parser.add_argument('--symlinks', default=use_symlinks,
+                        action='store_true', dest='symlinks',
+                        help='Try to use symlinks rather than copies, '
+                             'when symlinks are not the default for '
+                             'the platform.')
+    parser.add_argument('--clear', default=False, action='store_true',
+                        dest='clear', help='Delete the contents of the '
+                                           'virtual environment '
+                                           'directory if it already '
+                                           'exists, before virtual '
+                                           'environment creation.')
+    parser.add_argument('--upgrade', default=False, action='store_true',
+                        dest='upgrade', help='Upgrade the virtual '
+                                             'environment directory to '
+                                             'use this version of '
+                                             'Python, assuming Python '
+                                             'has been upgraded '
+                                             'in-place.')
+    parser.add_argument('--verbose', default=False, action='store_true',
+                        dest='verbose', help='Display the output '
+                                             'from the scripts which '
+                                             'install setuptools and pip.')
+    options = parser.parse_args(args)
+    if options.upgrade and options.clear:
+        raise ValueError('you cannot supply --upgrade and --clear together.')
+    builder = ExtendedEnvBuilder(system_site_packages=options.system_site,
+                                   clear=options.clear,
+                                   symlinks=options.symlinks,
+                                   upgrade=options.upgrade,
+                                   nodist=options.nodist,
+                                   nopip=options.nopip,
+                                   verbose=options.verbose)
+    for d in options.dirs:
+        builder.create(d)
+
+if __name__ == '__main__':
+    rc = 1
+    try:
+        main()
+        rc = 0
+    except Exception as e:
+        print('Error: %s' % e, file=sys.stderr)
+    sys.exit(rc)
+```
+
 这个脚本同样可以
 在线下载
 。
-目录
 venv
 --- 虚拟环境的创建
 创建虚拟环境
@@ -1753,27 +931,15 @@ API
 一个扩展
 EnvBuilder
 的例子
-上一主题
 ensurepip
 --- 初始设置
 pip
 安装器
-下一主题
 zipapp
 --- 管理可执行的 Python zip 归档文件
-当前页
-报告代码错误
-改进本页面
-显示源码
-显示翻译源
 «
-导航
-索引
-模块
 |
-下一页
 |
-上一页
 |
 Python
 »
@@ -1786,12 +952,7 @@ The Python standard library
 venv
 --- 虚拟环境的创建
 |
-主题
-自动
-明亮
-黑暗
 |
-©
 版权
 2001 Python Software Foundation.
 本页面采用 Python 软件基金会许可证第 2 版授权。

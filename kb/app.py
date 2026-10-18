@@ -81,7 +81,7 @@ def chat(req: ChatReq):
       data: "<文本片段>"                                          # 后续：逐段文本
       data: [DONE]                                               # 结束
     """
-    hits = rag.retrieve(req.query, top_k=3)
+    hits = rag.retrieve(req.query, top_k=8)
     meta = {
         "type": "meta",
         "sources": [

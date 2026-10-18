@@ -1,14 +1,9 @@
-# 示例科技开发者平台 · Python 技术参考（节选自 Python 3.13 官方中文文档）
+# 示例科技开发者平台 · Python 技术参考（节选自 Python 3 官方中文文档）
 
 > 来源：Python 官方中文文档 https://docs.python.org/zh-cn/3/library/logging.html
 > 说明：本文件为真实开源文档节选，用于企业知识库产品手册 demo 语料。
 
 logging --- Python 的日志记录工具 — Python 3.15.0 文档
-主题
-自动
-明亮
-黑暗
-目录
 logging
 --- Python 的日志记录工具
 记录器对象
@@ -23,24 +18,12 @@ LoggerAdapter 对象
 模块级函数
 模块级属性
 与警告模块集成
-上一主题
 time
 --- 时间的访问和转换
-下一主题
 logging.config
 --- 日志记录配置
-当前页
-报告代码错误
-改进本页面
-显示源码
-显示翻译源
-导航
-索引
-模块
 |
-下一页
 |
-上一页
 |
 Python
 »
@@ -53,10 +36,6 @@ The Python standard library
 logging
 --- Python 的日志记录工具
 |
-主题
-自动
-明亮
-黑暗
 |
 logging
 --- Python 的日志记录工具
@@ -71,87 +50,45 @@ Important
 这个模块为应用与库实现了灵活的事件日志系统的函数与类。
 使用标准库提供的 logging API 最主要的好处是，所有的 Python 模块都可能参与日志输出，包括你自己的日志消息和第三方模块的日志消息。
 这是一个惯例用法的简单示例:
+
+```
 # myapp.py
-import
-logging
-import
-mylib
-logger
-=
-logging
-.
-getLogger
-(
-__name__
-)
-def
-main
-():
-logging
-.
-basicConfig
-(
-filename
-=
-'myapp.log'
-,
-level
-=
-logging
-.
-INFO
-)
-logger
-.
-info
-(
-'Started'
-)
-mylib
-.
-do_something
-()
-logger
-.
-info
-(
-'Finished'
-)
-if
-__name__
-==
-'__main__'
-:
-main
-()
+import logging
+import mylib
+logger = logging.getLogger(__name__)
+
+def main():
+    logging.basicConfig(filename='myapp.log', level=logging.INFO)
+    logger.info('Started')
+    mylib.do_something()
+    logger.info('Finished')
+
+if __name__ == '__main__':
+    main()
+```
+
+
+```
 # mylib.py
-import
-logging
-logger
-=
-logging
-.
-getLogger
-(
-__name__
-)
-def
-do_something
-():
-logger
-.
-info
-(
-'Doing something'
-)
+import logging
+logger = logging.getLogger(__name__)
+
+def do_something():
+    logger.info('Doing something')
+```
+
 如果你运行
 myapp.py
 ，你应该在
 myapp.log
 中看到：
+
+```
 INFO:__main__:Started
 INFO:mylib:Doing something
 INFO:__main__:Finished
+```
+
 这种惯常用法的一个关键特性在于大部分代码都是简单地通过
 getLogger(__name__)
 创建一个模块级别的日志记录器，并使用该日志记录器来完成任何需要的日志记录。 这样既简洁明了，又能根据需要对下游代码进行细粒度的控制。 记录到模块级日志记录器的消息会被转发给更高级别模块的日志记录器的处理器，一直到最高层级的日志记录器即根日志记录器；这种方式被称为分级日志记录。
@@ -419,7 +356,11 @@ exc_info
 来指定
 stack_info
 ，例如，即使在未引发任何异常的情况下，也可以显示如何到达代码中的特定点。堆栈帧在标题行之后打印：
+
+```
 Stack (most recent call last):
+```
+
 这模仿了显示异常帧时所使用的
 Traceback
 (most
@@ -443,57 +384,21 @@ LogRecord
 中的
 __dict__
 填充为用户自定义的属性。 然后你将可以随意使用这些自定义的属性。 举例来说，它们可以被加入到已记录的日志消息中。 例如:
-FORMAT
-=
-'
-%(asctime)s
-%(clientip)-15s
-%(user)-8s
-%(message)s
-'
-logging
-.
-basicConfig
-(
-format
-=
-FORMAT
-)
-d
-=
-{
-'clientip'
-:
-'192.168.0.1'
-,
-'user'
-:
-'fbloggs'
-}
-logger
-=
-logging
-.
-getLogger
-(
-'tcpserver'
-)
-logger
-.
-warning
-(
-'Protocol problem:
-%s
-'
-,
-'connection reset'
-,
-extra
-=
-d
-)
+
+```
+FORMAT = '%(asctime)s %(clientip)-15s %(user)-8s %(message)s'
+logging.basicConfig(format=FORMAT)
+d = {'clientip': '192.168.0.1', 'user': 'fbloggs'}
+logger = logging.getLogger('tcpserver')
+logger.warning('Protocol problem: %s', 'connection reset', extra=d)
+```
+
 输出类似于
+
+```
 2006-02-08 22:20:02,165 192.168.0.1 fbloggs  Protocol problem: connection reset
+```
+
 在
 extra
 中传入的字典的键不应与日志系统所使用的键相冲突。 （请参阅
@@ -1438,44 +1343,18 @@ setLogRecordFactory()
 在创建时可使用此功能将你自己的值注入
 LogRecord
 。 你可以使用以下模式:
-old_factory
-=
-logging
-.
-getLogRecordFactory
-()
-def
-record_factory
-(
-*
-args
-,
-**
-kwargs
-):
-record
-=
-old_factory
-(
-*
-args
-,
-**
-kwargs
-)
-record
-.
-custom_attribute
-=
-0xdecafbad
-return
-record
-logging
-.
-setLogRecordFactory
-(
-record_factory
-)
+
+```
+old_factory = logging.getLogRecordFactory()
+
+def record_factory(*args, **kwargs):
+    record = old_factory(*args, **kwargs)
+    record.custom_attribute = 0xdecafbad
+    return record
+
+logging.setLogRecordFactory(record_factory)
+```
+
 通过此模式，多个工厂方法可以被链接起来，并且只要它们不重写彼此的属性或是在无意中覆盖了上面列出的标准属性，就不会发生意外。
 LogRecord 属性
 ¶
@@ -1801,14 +1680,12 @@ setLoggerClass()
 的类。 此函数可以从一个新的类定义中调用，以确保安装自定义的
 Logger
 类不会撤销其他代码已经应用的自定义操作。 例如:
-class
-MyLogger
-(
-logging
-.
-getLoggerClass
-()):
-# ... 在这里重写行为
+
+```
+class MyLogger(logging.getLoggerClass()):
+    # ... 在这里重写行为
+```
+
 logging.
 getLogRecordFactory
 (
@@ -2437,10 +2314,8 @@ captureWarnings(True)
 调用之前的有效目标）。
 参见
 logging.config
-模块
 日志记录模块的配置 API 。
 logging.handlers
-模块
 日志记录模块附带的有用处理器。
 PEP 282
 - Logging 系统
@@ -2451,7 +2326,6 @@ logging
 的原始来源。 该站点提供的软件包版本适用于 Python 1.5.2, 2.1.x 和 2.2.x，它们未在标准库中包括
 logging
 包。
-目录
 logging
 --- Python 的日志记录工具
 记录器对象
@@ -2466,25 +2340,13 @@ LoggerAdapter 对象
 模块级函数
 模块级属性
 与警告模块集成
-上一主题
 time
 --- 时间的访问和转换
-下一主题
 logging.config
 --- 日志记录配置
-当前页
-报告代码错误
-改进本页面
-显示源码
-显示翻译源
 «
-导航
-索引
-模块
 |
-下一页
 |
-上一页
 |
 Python
 »
@@ -2497,12 +2359,7 @@ The Python standard library
 logging
 --- Python 的日志记录工具
 |
-主题
-自动
-明亮
-黑暗
 |
-©
 版权
 2001 Python Software Foundation.
 本页面采用 Python 软件基金会许可证第 2 版授权。
@@ -2512,7 +2369,7 @@ logging
 》。
 Python 软件基金会是一家非营利性公司。
 请进行捐赠。
-最后更新于10月 17, 2026 (09:22 UTC) 。
+最后更新于10月 18, 2026 (09:20 UTC) 。
 发现了错误
 ？
 使用

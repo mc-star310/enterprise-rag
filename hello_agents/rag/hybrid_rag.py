@@ -42,11 +42,13 @@ class HybridRAG:
         chunk_size: int = 300,
         top_k: int = 3,
         rrf_k: int = 60,
+        min_chunk_size: int = 80,
     ):
         self.llm = llm
         # 没传就用工厂函数自动挑一个能用的（Ollama → 云端 → TF-IDF）
         self.embedding = embedding or create_embedding_with_fallback()
         self.chunk_size = chunk_size
+        self.min_chunk_size = min_chunk_size  # 短于此的碎片并入上一块（代码块/孤行）
         self.top_k = top_k
         self.rrf_k = rrf_k  # RRF 的平滑常数，经验值 60
 
@@ -65,9 +67,17 @@ class HybridRAG:
     # ---------- 第 1 步：切块（和前两版一致）----------
     def add_text(self, text: str, source: str = "unknown"):
         paragraphs = [p.strip() for p in re.split(r"\n\s*\n", text) if p.strip()]
-        new_chunks = []
+        raw_pieces = []
         for para in paragraphs:
             for piece in self._split_long(para):
+                raw_pieces.append(piece)
+        # 小块合并：代码块、孤行等被空行切出的短碎片（如一行命令）
+        # 单独成块时字面/语义信号都太弱，检索排不上来——并入上一块。
+        new_chunks = []
+        for piece in raw_pieces:
+            if len(piece) < self.min_chunk_size and new_chunks:
+                new_chunks[-1] += "\n" + piece
+            else:
                 new_chunks.append(piece)
         if not new_chunks:
             return

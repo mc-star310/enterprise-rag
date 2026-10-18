@@ -77,6 +77,42 @@ def fetch_pip():
     return True
 
 
+# docs.python.org 页面中的纯导航噪声行（整行匹配才剔除，避免误伤正文）
+_NAV_NOISE = {
+    "主题", "自动", "明亮", "黑暗", "目录", "上一主题", "下一主题",
+    "当前页", "报告代码错误", "改进本页面", "显示源码", "显示翻译源",
+    "导航", "索引", "模块", "下一页", "上一页", "| 下一页 |", "| 上一页 |",
+    "DOM Tree", "© 版权所有", "Built with Sphinx", "页面内容",
+}
+
+
+def _article_to_text(soup) -> str:
+    """把 docs.python.org 的 <article> 抽成文本，保留代码块不拆碎。
+
+    做法：先把每个 <pre> 的原文（含换行缩进）存入 codes，并原地替换成
+    哨兵行 @@CODE_i@@；再做整页文本抽取与逐行清洗；最后把哨兵行换回
+    Markdown 代码围栏。这样 `python -m venv` 之类命令保持连续完整。
+    """
+    art = soup.find("article") or soup
+    codes: list[str] = []
+    for pre in art.find_all("pre"):
+        codes.append(pre.get_text())
+        pre.replace_with(f"@@CODE_{len(codes) - 1}@@")
+    lines = []
+    for raw in art.get_text("\n").splitlines():
+        line = raw.strip()
+        if not line or line in _NAV_NOISE:
+            continue
+        if line.startswith(("| 下一页", "| 上一页", "©", "Built with")):
+            continue
+        lines.append(line)
+    text = "\n".join(lines)
+    # 哨兵行换回代码围栏（保留原始缩进与换行）
+    for i, code in enumerate(codes):
+        text = text.replace(f"@@CODE_{i}@@", "\n```\n" + code.rstrip() + "\n```\n")
+    return text
+
+
 def fetch_python_pages():
     """抓取 Python 官方中文文档若干核心章节，作为产品手册。"""
     os.makedirs(PRODUCT_DIR, exist_ok=True)
@@ -93,10 +129,9 @@ def fetch_python_pages():
         if not r:
             continue
         soup = BeautifulSoup(r.text, "html.parser")
-        art = soup.find("article") or soup
-        txt = art.get_text("\n", strip=True)
+        txt = _article_to_text(soup)
         header = (
-            "# 示例科技开发者平台 · Python 技术参考（节选自 Python 3.13 官方中文文档）\n\n"
+            "# 示例科技开发者平台 · Python 技术参考（节选自 Python 3 官方中文文档）\n\n"
             f"> 来源：Python 官方中文文档 {url}\n"
             "> 说明：本文件为真实开源文档节选，用于企业知识库产品手册 demo 语料。\n\n"
         )

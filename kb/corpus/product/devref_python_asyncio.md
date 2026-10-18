@@ -1,14 +1,9 @@
-# 示例科技开发者平台 · Python 技术参考（节选自 Python 3.13 官方中文文档）
+# 示例科技开发者平台 · Python 技术参考（节选自 Python 3 官方中文文档）
 
 > 来源：Python 官方中文文档 https://docs.python.org/zh-cn/3/library/asyncio-task.html
 > 说明：本文件为真实开源文档节选，用于企业知识库产品手册 demo 语料。
 
 协程与任务 — Python 3.15.0 文档
-主题
-自动
-明亮
-黑暗
-目录
 协程与任务
 协程
 可等待对象
@@ -25,22 +20,10 @@
 跨线程调度
 内省
 Task 对象
-上一主题
 运行器
-下一主题
 流
-当前页
-报告代码错误
-改进本页面
-显示源码
-显示翻译源
-导航
-索引
-模块
 |
-下一页
 |
-上一页
 |
 Python
 »
@@ -55,10 +38,6 @@ asyncio
 »
 协程与任务
 |
-主题
-自动
-明亮
-黑暗
 |
 协程与任务
 ¶
@@ -85,148 +64,62 @@ Lib/asyncio/coroutines.py
 通过 async/await 语法来声明
 协程
 是编写 asyncio 应用的推荐方式。例如，以下代码段会打印 "hello"，等待 1 秒，再打印 "world":
->>>
-import
-asyncio
->>>
-async
-def
-main
-():
-...
-print
-(
-'hello'
-)
-...
-await
-asyncio
-.
-sleep
-(
-1
-)
-...
-print
-(
-'world'
-)
->>>
-asyncio
-.
-run
-(
-main
-())
+
+```
+>>> import asyncio
+
+>>> async def main():
+...     print('hello')
+...     await asyncio.sleep(1)
+...     print('world')
+
+>>> asyncio.run(main())
 hello
 world
+```
+
 注意：简单地调用一个协程并不会使其被调度执行:
->>>
-main
-()
+
+```
+>>> main()
 <coroutine object main at 0x1053bb7c8>
+```
+
 要实际运行一个协程，asyncio 提供了以下几种机制：
 asyncio.run()
 函数用来运行最高层级的入口点 "main()" 函数 (参见上面的示例。)
 对协程执行 await。以下代码段会在等待 1 秒后打印 "hello"，然后
 再次
 等待 2 秒后打印 "world":
-import
-asyncio
-import
-time
-async
-def
-say_after
-(
-delay
-,
-what
-):
-await
-asyncio
-.
-sleep
-(
-delay
-)
-print
-(
-what
-)
-async
-def
-main
-():
-print
-(
-f
-"started at
-{
-time
-.
-strftime
-(
-'
-%X
-'
-)
-}
-"
-)
-await
-say_after
-(
-1
-,
-'hello'
-)
-await
-say_after
-(
-2
-,
-'world'
-)
-print
-(
-f
-"finished at
-{
-time
-.
-strftime
-(
-'
-%X
-'
-)
-}
-"
-)
-asyncio
-.
-run
-(
-main
-())
+
+```
+import asyncio
+import time
+
+async def say_after(delay, what):
+    await asyncio.sleep(delay)
+    print(what)
+
+async def main():
+    print(f"started at {time.strftime('%X')}")
+
+    await say_after(1, 'hello')
+    await say_after(2, 'world')
+
+    print(f"finished at {time.strftime('%X')}")
+
+asyncio.run(main())
+```
+
 预期的输出:
-started
-at
-17
-:
-13
-:
-52
+
+```
+started at 17:13:52
 hello
 world
-finished
-at
-17
-:
-13
-:
-55
+finished at 17:13:55
+```
+
 asyncio.create_task()
 函数用来并发运行作为 asyncio
 任务
@@ -236,163 +129,55 @@ asyncio.create_task()
 运行两个
 say_after
 协程:
-async
-def
-main
-():
-task1
-=
-asyncio
-.
-create_task
-(
-say_after
-(
-1
-,
-'hello'
-))
-task2
-=
-asyncio
-.
-create_task
-(
-say_after
-(
-2
-,
-'world'
-))
-print
-(
-f
-"started at
-{
-time
-.
-strftime
-(
-'
-%X
-'
-)
-}
-"
-)
-# 等待直到两个任务都完成
-# （会花费约 2 秒钟。）
-await
-task1
-await
-task2
-print
-(
-f
-"finished at
-{
-time
-.
-strftime
-(
-'
-%X
-'
-)
-}
-"
-)
+
+```
+async def main():
+    task1 = asyncio.create_task(
+        say_after(1, 'hello'))
+
+    task2 = asyncio.create_task(
+        say_after(2, 'world'))
+
+    print(f"started at {time.strftime('%X')}")
+
+    # 等待直到两个任务都完成
+    # （会花费约 2 秒钟。）
+    await task1
+    await task2
+
+    print(f"finished at {time.strftime('%X')}")
+```
+
 注意，预期的输出显示代码段的运行时间比之前快了 1 秒:
-started
-at
-17
-:
-14
-:
-32
+
+```
+started at 17:14:32
 hello
 world
-finished
-at
-17
-:
-14
-:
-34
+finished at 17:14:34
+```
+
 asyncio.TaskGroup
 类提供了
 create_task()
 的更现代化的替代。使用此 API，之前的例子将变为:
-async
-def
-main
-():
-async
-with
-asyncio
-.
-TaskGroup
-()
-as
-tg
-:
-task1
-=
-tg
-.
-create_task
-(
-say_after
-(
-1
-,
-'hello'
-))
-task2
-=
-tg
-.
-create_task
-(
-say_after
-(
-2
-,
-'world'
-))
-print
-(
-f
-"started at
-{
-time
-.
-strftime
-(
-'
-%X
-'
-)
-}
-"
-)
-# 当上下文管理器退出时 await 是隐式执行的。
-print
-(
-f
-"finished at
-{
-time
-.
-strftime
-(
-'
-%X
-'
-)
-}
-"
-)
+
+```
+async def main():
+    async with asyncio.TaskGroup() as tg:
+        task1 = tg.create_task(
+            say_after(1, 'hello'))
+
+        task2 = tg.create_task(
+            say_after(2, 'world'))
+
+        print(f"started at {time.strftime('%X')}")
+
+    # 当上下文管理器退出时 await 是隐式执行的。
+
+    print(f"finished at {time.strftime('%X')}")
+```
+
 用时和输出结果应当与之前的版本相同。
 Added in version 3.11:
 asyncio.TaskGroup
@@ -416,37 +201,25 @@ Future
 Python 协程属于
 可等待
 对象，因此可以在其他协程中被等待:
-import
-asyncio
-async
-def
-nested
-():
-return
-42
-async
-def
-main
-():
-# 如果我们只调用 "nested()" 则无事发生。
-# 一个协程对象被创建但是没有被等待，
-# 因此它 *根本不会运行*。
-nested
-()
-# 将引发 "RuntimeWarning"。
-# 现在让我们等待它：
-print
-(
-await
-nested
-())
-# 将打印 "42"。
-asyncio
-.
-run
-(
-main
-())
+
+```
+import asyncio
+
+async def nested():
+    return 42
+
+async def main():
+    # 如果我们只调用 "nested()" 则无事发生。
+    # 一个协程对象被创建但是没有被等待，
+    # 因此它 *根本不会运行*。
+    nested()  # 将引发 "RuntimeWarning"。
+
+    # 现在让我们等待它：
+    print(await nested())  # 将打印 "42"。
+
+asyncio.run(main())
+```
+
 重要
 在本文档中 "协程" 可用来表示两个紧密关联的概念：
 协程函数
@@ -468,37 +241,24 @@ asyncio.create_task()
 等函数封装为一个
 任务
 时，该协程会被自动调度执行:
-import
-asyncio
-async
-def
-nested
-():
-return
-42
-async
-def
-main
-():
-# 调度 nested() 与 "main()" 并发运行。
-task
-=
-asyncio
-.
-create_task
-(
-nested
-())
-# 现在可以通过 "task" 来取消 "nested()"，
-# 也可以等待 "task" 直到它被完成：
-await
-task
-asyncio
-.
-run
-(
-main
-())
+
+```
+import asyncio
+
+async def nested():
+    return 42
+
+async def main():
+    # 调度 nested() 与 "main()" 并发运行。
+    task = asyncio.create_task(nested())
+
+    # 现在可以通过 "task" 来取消 "nested()"，
+    # 也可以等待 "task" 直到它被完成：
+    await task
+
+asyncio.run(main())
+```
+
 Futures
 Future
 是一种特殊的
@@ -514,24 +274,18 @@ Future
 没有必要
 在应用层级的代码中创建 Future 对象。
 Future 对象有时会由库和某些 asyncio API 暴露给用户，用作可等待对象:
-async
-def
-main
-():
-await
-function_that_returns_a_future_object
-()
-# 这样也可以：
-await
-asyncio
-.
-gather
-(
-function_that_returns_a_future_object
-(),
-some_python_coroutine
-()
-)
+
+```
+async def main():
+    await function_that_returns_a_future_object()
+
+    # 这样也可以：
+    await asyncio.gather(
+        function_that_returns_a_future_object(),
+        some_python_coroutine()
+    )
+```
+
 一个很好的返回 Future 对象的低层级函数的示例是
 loop.run_in_executor()
 。
@@ -597,47 +351,22 @@ asyncio.TaskGroup.create_task()
 是一个平衡了结构化并发的新选择；它允许等待一组相关任务并具有极强的安全保证。
 重要
 保存一个指向此函数的结果的引用，以避免任务在执行过程中消失。事件循环将只保留对任务的弱引用。 未在其他地方被引用的任务可能在任何时候被作为垃圾回收，即使是在它被完成之前。如果需要可靠的“发射后不用管”后台任务，请将它们放到一个多项集中:
-background_tasks
-=
-set
-()
-for
-i
-in
-range
-(
-10
-):
-task
-=
-asyncio
-.
-create_task
-(
-some_coro
-(
-param
-=
-i
-))
-# 将任务加入集合。这将创建一个强引用。
-background_tasks
-.
-add
-(
-task
-)
-# 为避免永远保留对已结束任务的引用，
-# 让每个任务在完成后将对自己的引用
-# 移出集合：
-task
-.
-add_done_callback
-(
-background_tasks
-.
-discard
-)
+
+```
+background_tasks = set()
+
+for i in range(10):
+    task = asyncio.create_task(some_coro(param=i))
+
+    # 将任务加入集合。这将创建一个强引用。
+    background_tasks.add(task)
+
+    # 为避免永远保留对已结束任务的引用，
+    # 让每个任务在完成后将对自己的引用
+    # 移出集合：
+    task.add_done_callback(background_tasks.discard)
+```
+
 Note that this approach never awaits the tasks, so if a task
 fails, its exception is never retrieved and asyncio logs a
 "Task exception was never retrieved" message when the task is
@@ -645,32 +374,13 @@ garbage collected.  To avoid this, use
 asyncio.TaskGroup
 which keeps a strong reference to each task, awaits them and
 propagates their exceptions:
-async
-with
-asyncio
-.
-TaskGroup
-()
-as
-tg
-:
-for
-i
-in
-range
-(
-10
-):
-tg
-.
-create_task
-(
-some_coro
-(
-param
-=
-i
-))
+
+```
+async with asyncio.TaskGroup() as tg:
+    for i in range(10):
+        tg.create_task(some_coro(param=i))
+```
+
 Added in version 3.7.
 在 3.8 版本发生变更:
 增加了
@@ -799,58 +509,15 @@ cancel()
 方法绑定到其他任务，允许远程撤销。
 Added in version 3.15.
 示例:
-async
-def
-main
-():
-async
-with
-asyncio
-.
-TaskGroup
-()
-as
-tg
-:
-task1
-=
-tg
-.
-create_task
-(
-some_coro
-(
-...
-))
-task2
-=
-tg
-.
-create_task
-(
-another_coro
-(
-...
-))
-print
-(
-f
-"Both tasks have completed now:
-{
-task1
-.
-result
-()
-}
-,
-{
-task2
-.
-result
-()
-}
-"
-)
+
+```
+async def main():
+    async with asyncio.TaskGroup() as tg:
+        task1 = tg.create_task(some_coro(...))
+        task2 = tg.create_task(another_coro(...))
+    print(f"Both tasks have completed now: {task1.result()}, {task2.result()}")
+```
+
 The
 async
 with
@@ -984,67 +651,23 @@ sleep()
 总是会挂起当前任务，以允许其他任务运行。
 将 delay 设为 0 将提供一个经优化的路径以允许其他任务运行。这可供长期间运行的函数使用以避免在函数调用的全过程中阻塞事件循环。
 以下协程示例运行 5 秒，每秒显示一次当前日期:
-import
-asyncio
-import
-datetime
-as
-dt
-async
-def
-display_date
-():
-loop
-=
-asyncio
-.
-get_running_loop
-()
-end_time
-=
-loop
-.
-time
-()
-+
-5.0
-while
-True
-:
-print
-(
-dt
-.
-datetime
-.
-now
-())
-if
-(
-loop
-.
-time
-()
-+
-1.0
-)
->=
-end_time
-:
-break
-await
-asyncio
-.
-sleep
-(
-1
-)
-asyncio
-.
-run
-(
-display_date
-())
+
+```
+import asyncio
+import datetime as dt
+
+async def display_date():
+    loop = asyncio.get_running_loop()
+    end_time = loop.time() + 5.0
+    while True:
+        print(dt.datetime.now())
+        if (loop.time() + 1.0) >= end_time:
+            break
+        await asyncio.sleep(1)
+
+asyncio.run(display_date())
+```
+
 在 3.10 版本发生变更:
 移除了
 loop
@@ -1129,117 +752,30 @@ TaskGroup
 gather
 不会这样做。
 示例:
-import
-asyncio
-async
-def
-factorial
-(
-name
-,
-number
-):
-f
-=
-1
-for
-i
-in
-range
-(
-2
-,
-number
-+
-1
-):
-print
-(
-f
-"Task
-{
-name
-}
-: Compute factorial(
-{
-number
-}
-), currently i=
-{
-i
-}
-..."
-)
-await
-asyncio
-.
-sleep
-(
-1
-)
-f
-*=
-i
-print
-(
-f
-"Task
-{
-name
-}
-: factorial(
-{
-number
-}
-) =
-{
-f
-}
-"
-)
-return
-f
-async
-def
-main
-():
-# *并发地* 调度这三次调用：
-L
-=
-await
-asyncio
-.
-gather
-(
-factorial
-(
-"A"
-,
-2
-),
-factorial
-(
-"B"
-,
-3
-),
-factorial
-(
-"C"
-,
-4
-),
-)
-print
-(
-L
-)
-asyncio
-.
-run
-(
-main
-())
+
+```
+import asyncio
+
+async def factorial(name, number):
+    f = 1
+    for i in range(2, number + 1):
+        print(f"Task {name}: Compute factorial({number}), currently i={i}...")
+        await asyncio.sleep(1)
+        f *= i
+    print(f"Task {name}: factorial({number}) = {f}")
+    return f
+
+async def main():
+    # *并发地* 调度这三次调用：
+    L = await asyncio.gather(
+        factorial("A", 2),
+        factorial("B", 3),
+        factorial("C", 4),
+    )
+    print(L)
+
+asyncio.run(main())
+
 # 预期的输出：
 #
 #     Task A: Compute factorial(2), currently i=2...
@@ -1252,6 +788,8 @@ main
 #     Task C: Compute factorial(4), currently i=4...
 #     Task C: factorial(4) = 24
 #     [2, 6, 24]
+```
+
 备注
 如果
 return_exceptions
@@ -1345,27 +883,18 @@ aw
 aw
 是一个协程，它将自动被作为任务调度。
 以下语句:
-task
-=
-asyncio
-.
-create_task
-(
-something
-())
-res
-=
-await
-shield
-(
-task
-)
+
+```
+task = asyncio.create_task(something())
+res = await shield(task)
+```
+
 相当于:
-res
-=
-await
-something
-()
+
+```
+res = await something()
+```
+
 不同之处
 在于如果包含它的协程被取消，在
 something()
@@ -1382,29 +911,15 @@ shield()
 如果希望完全忽略取消操作 (不推荐) 则
 shield()
 函数需要配合一个 try/except 代码段，如下所示:
-task
-=
-asyncio
-.
-create_task
-(
-something
-())
-try
-:
-res
-=
-await
-shield
-(
-task
-)
-except
-CancelledError
-:
-res
-=
-None
+
+```
+task = asyncio.create_task(something())
+try:
+    res = await shield(task)
+except CancelledError:
+    res = None
+```
+
 重要
 保存一个传给此函数的任务的引用，以避免任务在执行过程中消失。事件循环将只保留对任务的弱引用。 未在其他地方被引用的任务可能在任何时候被作为垃圾回收，即使是在它被完成之前。
 在 3.10 版本发生变更:
@@ -1438,21 +953,13 @@ None
 Timeout.reschedule()
 来重新安排计划。
 示例:
-async
-def
-main
-():
-async
-with
-asyncio
-.
-timeout
-(
-10
-):
-await
-long_running_task
-()
+
+```
+async def main():
+    async with asyncio.timeout(10):
+        await long_running_task()
+```
+
 如果
 long_running_task
 耗费 10 秒以上完成，该上下文管理器将取消当前任务并在内部处理所引发的
@@ -1474,34 +981,18 @@ TimeoutError
 捕获
 TimeoutError
 的示例:
-async
-def
-main
-():
-try
-:
-async
-with
-asyncio
-.
-timeout
-(
-10
-):
-await
-long_running_task
-()
-except
-TimeoutError
-:
-print
-(
-"The long operation timed out, but we've handled it."
-)
-print
-(
-"This statement will run regardless."
-)
+
+```
+async def main():
+    try:
+        async with asyncio.timeout(10):
+            await long_running_task()
+    except TimeoutError:
+        print("The long operation timed out, but we've handled it.")
+
+    print("This statement will run regardless.")
+```
+
 asyncio.timeout()
 所产生的上下文管理器可以被重新调整到不同的终止点并执行检查。
 class
@@ -1562,56 +1053,24 @@ bool
 ¶
 返回上下文管理器是否已超出时限（过期）。
 示例:
-async
-def
-main
-():
-try
-:
-# 当开始时我们并不知道超时值，所以我们传入 ``None``。
-async
-with
-asyncio
-.
-timeout
-(
-None
-)
-as
-cm
-:
-# 现在我们知道超时值了，所以我们将它重新加入计划任务。
-new_deadline
-=
-get_running_loop
-()
-.
-time
-()
-+
-10
-cm
-.
-reschedule
-(
-new_deadline
-)
-await
-long_running_task
-()
-except
-TimeoutError
-:
-pass
-if
-cm
-.
-expired
-():
-print
-(
-"Looks like we haven't finished on time."
-)
+
+```
+async def main():
+    try:
+        # 当开始时我们并不知道超时值，所以我们传入 ``None``。
+        async with asyncio.timeout(None) as cm:
+            # 现在我们知道超时值了，所以我们将它重新加入计划任务。
+            new_deadline = get_running_loop().time() + 10
+            cm.reschedule(new_deadline)
+
+            await long_running_task()
+    except TimeoutError:
+        pass
+
+    if cm.expired():
+        print("Looks like we haven't finished on time.")
+```
+
 超时上下文管理器可以被安全地嵌套。
 Added in version 3.11.
 asyncio.
@@ -1628,46 +1087,20 @@ when
 None
 。
 示例:
-async
-def
-main
-():
-loop
-=
-get_running_loop
-()
-deadline
-=
-loop
-.
-time
-()
-+
-20
-try
-:
-async
-with
-asyncio
-.
-timeout_at
-(
-deadline
-):
-await
-long_running_task
-()
-except
-TimeoutError
-:
-print
-(
-"The long operation timed out, but we've handled it."
-)
-print
-(
-"This statement will run regardless."
-)
+
+```
+async def main():
+    loop = get_running_loop()
+    deadline = loop.time() + 20
+    try:
+        async with asyncio.timeout_at(deadline):
+            await long_running_task()
+    except TimeoutError:
+        print("The long operation timed out, but we've handled it.")
+
+    print("This statement will run regardless.")
+```
+
 Added in version 3.11.
 async
 asyncio.
@@ -1707,56 +1140,27 @@ timeout
 aw
 指定的对象也会被取消。
 示例:
-async
-def
-eternity
-():
-# 休眠一小时
-await
-asyncio
-.
-sleep
-(
-3600
-)
-print
-(
-'yay!'
-)
-async
-def
-main
-():
-# 等待至多 1 秒
-try
-:
-await
-asyncio
-.
-wait_for
-(
-eternity
-(),
-timeout
-=
-1.0
-)
-except
-TimeoutError
-:
-print
-(
-'timeout!'
-)
-asyncio
-.
-run
-(
-main
-())
+
+```
+async def eternity():
+    # 休眠一小时
+    await asyncio.sleep(3600)
+    print('yay!')
+
+async def main():
+    # 等待至多 1 秒
+    try:
+        await asyncio.wait_for(eternity(), timeout=1.0)
+    except TimeoutError:
+        print('timeout!')
+
+asyncio.run(main())
+
 # 预期的输出：
 #
 #     timeout!
+```
+
 在 3.7 版本发生变更:
 当
 aw
@@ -1822,17 +1226,11 @@ aws
 pending)
 。
 用法:
-done
-,
-pending
-=
-await
-asyncio
-.
-wait
-(
-aws
-)
+
+```
+done, pending = await asyncio.wait(aws)
+```
+
 如指定
 timeout
 (float 或 int 类型) 则它将被用于控制返回之前等待的最长秒数。
@@ -1901,109 +1299,38 @@ asynchronous iterator
 或普通的
 iterator
 被迭代。当使用异步迭代时，原来提供的可等待对象如果为 Task 或 Future 对象则会被产出。 这样可以更容易地将之前加入计划的任务与其结果进行对应。例如:
-ipv4_connect
-=
-create_task
-(
-open_connection
-(
-"127.0.0.1"
-,
-80
-))
-ipv6_connect
-=
-create_task
-(
-open_connection
-(
-"::1"
-,
-80
-))
-tasks
-=
-[
-ipv4_connect
-,
-ipv6_connect
-]
-async
-for
-earliest_connect
-in
-as_completed
-(
-tasks
-):
-# earliest_connect 已完成。要获取结果可通过等待它
-# 或是调用 earliest_connect.result()
-reader
-,
-writer
-=
-await
-earliest_connect
-if
-earliest_connect
-is
-ipv6_connect
-:
-print
-(
-"IPv6 connection established."
-)
-else
-:
-print
-(
-"IPv4 connection established."
-)
+
+```
+ipv4_connect = create_task(open_connection("127.0.0.1", 80))
+ipv6_connect = create_task(open_connection("::1", 80))
+tasks = [ipv4_connect, ipv6_connect]
+
+async for earliest_connect in as_completed(tasks):
+    # earliest_connect 已完成。要获取结果可通过等待它
+    # 或是调用 earliest_connect.result()
+    reader, writer = await earliest_connect
+
+    if earliest_connect is ipv6_connect:
+        print("IPv6 connection established.")
+    else:
+        print("IPv4 connection established.")
+```
+
 在异步迭代期间，将为不属于 Task 或 Future 对象的可等待对象产出隐式创建的任务。
 当被用作普通的迭代器时，每次迭代将产出一个返回结果的新协程或是引发下一个完成的等待对象对应的异常。此模式将与 Python 3.13 之前的版本保持兼容:
-ipv4_connect
-=
-create_task
-(
-open_connection
-(
-"127.0.0.1"
-,
-80
-))
-ipv6_connect
-=
-create_task
-(
-open_connection
-(
-"::1"
-,
-80
-))
-tasks
-=
-[
-ipv4_connect
-,
-ipv6_connect
-]
-for
-next_connect
-in
-as_completed
-(
-tasks
-):
-# next_connect 不是原始 Task 对象之一。
-# 它必须被等待以获取结果值或是引发
-# 接下来要结束的可等待对象的异常。
-reader
-,
-writer
-=
-await
-next_connect
+
+```
+ipv4_connect = create_task(open_connection("127.0.0.1", 80))
+ipv6_connect = create_task(open_connection("::1", 80))
+tasks = [ipv4_connect, ipv6_connect]
+
+for next_connect in as_completed(tasks):
+    # next_connect 不是原始 Task 对象之一。
+    # 它必须被等待以获取结果值或是引发
+    # 接下来要结束的可等待对象的异常。
+    reader, writer = await next_connect
+```
+
 如果在所有可等待对象完成之前达到超时限制则会引发
 TimeoutError
 。这将在异步迭代期间由
@@ -2059,114 +1386,35 @@ contextvars.Context
 func
 的最终结果的协程。
 这个协程函数主要是用于执行在其他情况下会阻塞事件循环的 IO 密集型函数/方法。例如:
-def
-blocking_io
-():
-print
-(
-f
-"start blocking_io at
-{
-time
-.
-strftime
-(
-'
-%X
-'
-)
-}
-"
-)
-# 请注意 time.sleep() 可被替换为任意一种
-# 阻塞式 IO 密集型操作，例如文件操作。
-time
-.
-sleep
-(
-1
-)
-print
-(
-f
-"blocking_io complete at
-{
-time
-.
-strftime
-(
-'
-%X
-'
-)
-}
-"
-)
-async
-def
-main
-():
-print
-(
-f
-"started main at
-{
-time
-.
-strftime
-(
-'
-%X
-'
-)
-}
-"
-)
-await
-asyncio
-.
-gather
-(
-asyncio
-.
-to_thread
-(
-blocking_io
-),
-asyncio
-.
-sleep
-(
-1
-))
-print
-(
-f
-"finished main at
-{
-time
-.
-strftime
-(
-'
-%X
-'
-)
-}
-"
-)
-asyncio
-.
-run
-(
-main
-())
+
+```
+def blocking_io():
+    print(f"start blocking_io at {time.strftime('%X')}")
+    # 请注意 time.sleep() 可被替换为任意一种
+    # 阻塞式 IO 密集型操作，例如文件操作。
+    time.sleep(1)
+    print(f"blocking_io complete at {time.strftime('%X')}")
+
+async def main():
+    print(f"started main at {time.strftime('%X')}")
+
+    await asyncio.gather(
+        asyncio.to_thread(blocking_io),
+        asyncio.sleep(1))
+
+    print(f"finished main at {time.strftime('%X')}")
+
+
+asyncio.run(main())
+
 # 预期的输出：
 #
 # started main at 19:50:53
 # start blocking_io at 19:50:53
 # blocking_io complete at 19:50:54
 # finished main at 19:50:54
+```
+
 在任何协程中直接调用
 blocking_io()
 将会在调用期间阻塞事件循环，导致额外的 1 秒运行时间。但是，通过改用
@@ -2196,304 +1444,79 @@ loop
 concurrent.futures.Future
 以等待来自其他 OS 线程的结果。
 此函数应该从另一个 OS 线程中调用，而非事件循环运行所在线程。示例:
-def
-in_thread
-(
-loop
-:
-asyncio
-.
-AbstractEventLoop
-)
-->
-None
-:
-# 运行一些阻塞 IO
-pathlib
-.
-Path
-(
-"example.txt"
-)
-.
-write_text
-(
-"hello world"
-,
-encoding
-=
-"utf8"
-)
-# 创建一个协程
-coro
-=
-asyncio
-.
-sleep
-(
-1
-,
-result
-=
-3
-)
-# 将协程提交给给定的循环
-future
-=
-asyncio
-.
-run_coroutine_threadsafe
-(
-coro
-,
-loop
-)
-# 使用可选的 timeout 参数等待结果
-assert
-future
-.
-result
-(
-timeout
-=
-2
-)
-==
-3
-async
-def
-amain
-()
-->
-None
-:
-# 获取正在运行的循环
-loop
-=
-asyncio
-.
-get_running_loop
-()
-# 在线程中运行一些东西
-await
-asyncio
-.
-to_thread
-(
-in_thread
-,
-loop
-)
+
+```
+def in_thread(loop: asyncio.AbstractEventLoop) -> None:
+    # 运行一些阻塞 IO
+    pathlib.Path("example.txt").write_text("hello world", encoding="utf8")
+
+    # 创建一个协程
+    coro = asyncio.sleep(1, result=3)
+
+    # 将协程提交给给定的循环
+    future = asyncio.run_coroutine_threadsafe(coro, loop)
+
+    # 使用可选的 timeout 参数等待结果
+    assert future.result(timeout=2) == 3
+
+async def amain() -> None:
+    # 获取正在运行的循环
+    loop = asyncio.get_running_loop()
+
+    # 在线程中运行一些东西
+    await asyncio.to_thread(in_thread, loop)
+```
+
 也有可能反过来运行。例如:
-@contextlib
-.
-contextmanager
-def
-loop_in_thread
-()
-->
-Generator
-[
-asyncio
-.
-AbstractEventLoop
-]:
-loop_fut
-=
-concurrent
-.
-futures
-.
-Future
-[
-asyncio
-.
-AbstractEventLoop
-]()
-stop_event
-=
-asyncio
-.
-Event
-()
-async
-def
-main
-()
-->
-None
-:
-loop_fut
-.
-set_result
-(
-asyncio
-.
-get_running_loop
-())
-await
-stop_event
-.
-wait
-()
-with
-concurrent
-.
-futures
-.
-ThreadPoolExecutor
-(
-1
-)
-as
-tpe
-:
-complete_fut
-=
-tpe
-.
-submit
-(
-asyncio
-.
-run
-,
-main
-())
-for
-fut
-in
-concurrent
-.
-futures
-.
-as_completed
-((
-loop_fut
-,
-complete_fut
-)):
-if
-fut
-is
-loop_fut
-:
-loop
-=
-loop_fut
-.
-result
-()
-try
-:
-yield
-loop
-finally
-:
-loop
-.
-call_soon_threadsafe
-(
-stop_event
-.
-set
-)
-else
-:
-fut
-.
-result
-()
+
+```
+@contextlib.contextmanager
+def loop_in_thread() -> Generator[asyncio.AbstractEventLoop]:
+    loop_fut = concurrent.futures.Future[asyncio.AbstractEventLoop]()
+    stop_event = asyncio.Event()
+
+    async def main() -> None:
+        loop_fut.set_result(asyncio.get_running_loop())
+        await stop_event.wait()
+
+    with concurrent.futures.ThreadPoolExecutor(1) as tpe:
+        complete_fut = tpe.submit(asyncio.run, main())
+        for fut in concurrent.futures.as_completed((loop_fut, complete_fut)):
+            if fut is loop_fut:
+                loop = loop_fut.result()
+                try:
+                    yield loop
+                finally:
+                    loop.call_soon_threadsafe(stop_event.set)
+            else:
+                fut.result()
+
 # 在另一线程中创建循环
-with
-loop_in_thread
-()
-as
-loop
-:
-# 创建一个协程
-coro
-=
-asyncio
-.
-sleep
-(
-1
-,
-result
-=
-3
-)
-# 将协程提交至给定的循环
-future
-=
-asyncio
-.
-run_coroutine_threadsafe
-(
-coro
-,
-loop
-)
-# 附带可选的超时参数等待结果
-assert
-future
-.
-result
-(
-timeout
-=
-2
-)
-==
-3
+with loop_in_thread() as loop:
+    # 创建一个协程
+    coro = asyncio.sleep(1, result=3)
+
+    # 将协程提交至给定的循环
+    future = asyncio.run_coroutine_threadsafe(coro, loop)
+
+    # 附带可选的超时参数等待结果
+    assert future.result(timeout=2) == 3
+```
+
 如果在协程内产生了异常，将会通知返回的 Future 对象。它也可被用来取消事件循环中的任务:
-try
-:
-result
-=
-future
-.
-result
-(
-timeout
-)
-except
-TimeoutError
-:
-print
-(
-'The coroutine took too long, cancelling the task...'
-)
-future
-.
-cancel
-()
-except
-Exception
-as
-exc
-:
-print
-(
-f
-'The coroutine raised an exception:
-{
-exc
-!r}
-'
-)
-else
-:
-print
-(
-f
-'The coroutine returned:
-{
-result
-!r}
-'
-)
+
+```
+try:
+    result = future.result(timeout)
+except TimeoutError:
+    print('The coroutine took too long, cancelling the task...')
+    future.cancel()
+except Exception as exc:
+    print(f'The coroutine raised an exception: {exc!r}')
+else:
+    print(f'The coroutine returned: {result!r}')
+```
+
 参见
 concurrency and multithreading
 部分的文档。
@@ -2864,90 +1887,43 @@ msg
 msg
 形参将从被取消的任务传播到其等待方。
 以下示例演示了协程是如何侦听取消请求的:
-async
-def
-cancel_me
-():
-print
-(
-'cancel_me(): before sleep'
-)
-try
-:
-# 等待 1 小时
-await
-asyncio
-.
-sleep
-(
-3600
-)
-except
-asyncio
-.
-CancelledError
-:
-print
-(
-'cancel_me(): cancel sleep'
-)
-raise
-finally
-:
-print
-(
-'cancel_me(): after sleep'
-)
-async
-def
-main
-():
-# 创建一个 "cancel_me" 任务
-task
-=
-asyncio
-.
-create_task
-(
-cancel_me
-())
-# 等待 1 秒
-await
-asyncio
-.
-sleep
-(
-1
-)
-task
-.
-cancel
-()
-try
-:
-await
-task
-except
-asyncio
-.
-CancelledError
-:
-print
-(
-"main(): cancel_me is cancelled now"
-)
-asyncio
-.
-run
-(
-main
-())
+
+```
+async def cancel_me():
+    print('cancel_me(): before sleep')
+
+    try:
+        # 等待 1 小时
+        await asyncio.sleep(3600)
+    except asyncio.CancelledError:
+        print('cancel_me(): cancel sleep')
+        raise
+    finally:
+        print('cancel_me(): after sleep')
+
+async def main():
+    # 创建一个 "cancel_me" 任务
+    task = asyncio.create_task(cancel_me())
+
+    # 等待 1 秒
+    await asyncio.sleep(1)
+
+    task.cancel()
+    try:
+        await task
+    except asyncio.CancelledError:
+        print("main(): cancel_me is cancelled now")
+
+asyncio.run(main())
+
 # 预期的输出：
 #
 #     cancel_me(): before sleep
 #     cancel_me(): cancel sleep
 #     cancel_me(): after sleep
 #     main(): cancel_me is cancelled now
+```
+
 cancelled
 (
 )
@@ -2979,38 +1955,20 @@ Added in version 3.11.
 和
 asyncio.timeout()
 继续运行，将取消操作隔离在相应的结构化代码块中。例如:
-async
-def
-make_request_with_timeout
-():
-try
-:
-async
-with
-asyncio
-.
-timeout
-(
-1
-):
-# 受超时影响的结构块：
-await
-make_request
-()
-await
-make_another_request
-()
-except
-TimeoutError
-:
-log
-(
-"There was a timeout"
-)
-# 不受超时影响的外层代码：
-await
-unrelated_code
-()
+
+```
+async def make_request_with_timeout():
+    try:
+        async with asyncio.timeout(1):
+            # 受超时影响的结构块：
+            await make_request()
+            await make_another_request()
+    except TimeoutError:
+        log("There was a timeout")
+    # 不受超时影响的外层代码：
+    await unrelated_code()
+```
+
 带有
 make_request()
 和
@@ -3056,7 +2014,6 @@ uncancel()
 uncancel()
 了解详情。
 Added in version 3.11.
-目录
 协程与任务
 协程
 可等待对象
@@ -3073,23 +2030,11 @@ Added in version 3.11.
 跨线程调度
 内省
 Task 对象
-上一主题
 运行器
-下一主题
 流
-当前页
-报告代码错误
-改进本页面
-显示源码
-显示翻译源
 «
-导航
-索引
-模块
 |
-下一页
 |
-上一页
 |
 Python
 »
@@ -3104,12 +2049,7 @@ asyncio
 »
 协程与任务
 |
-主题
-自动
-明亮
-黑暗
 |
-©
 版权
 2001 Python Software Foundation.
 本页面采用 Python 软件基金会许可证第 2 版授权。
