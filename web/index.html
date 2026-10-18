@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="BvmcCF2tdwEuTV7HSOagEG">
+<head data-page-node-id="pHYL3FADioRmTQxjZ0DsMD">
+<meta charset="UTF-8" data-page-node-id="e7Jo8Ez5MFkjktxapHBZw3" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="zOwmI8vKt0Km9VT1WznIUK" />
+<title>HelloAgents · RAG 智能问答</title>
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --panel: #ffffff;
+    --text: #1c2330;
+    --muted: #6b7280;
+    --line: #e6e9f0;
+    --primary: #4f6ef7;
+    --primary-2: #7c4dff;
+    --user-bubble: linear-gradient(135deg, #4f6ef7, #7c4dff);
+    --bot-bubble: #f0f3fa;
+    --shadow: 0 6px 24px rgba(31, 45, 90, 0.08);
+    --code-bg: #eef1f8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1420;
+      --panel: #171d2b;
+      --text: #e8ecf5;
+      --muted: #97a0b5;
+      --line: #2a3242;
+      --primary: #6d8bff;
+      --primary-2: #9a7bff;
+      --user-bubble: linear-gradient(135deg, #5b73ff, #8b5bff);
+      --bot-bubble: #1e2638;
+      --shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+      --code-bg: #222a3a;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+      "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+  }
+  .app {
+    width: 100%;
+    max-width: 860px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--panel);
+  }
+  .logo {
+    width: 38px; height: 38px; border-radius: 11px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-2));
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: 18px; flex-shrink: 0;
+  }
+  .title { font-size: 16px; font-weight: 650; line-height: 1.2; }
+  .subtitle { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .status {
+    margin-left: auto; font-size: 12px; color: var(--muted);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #c2c8d4; }
+  .dot.on { background: #34d399; box-shadow: 0 0 0 3px rgba(52,211,153,0.18); }
+
+  .messages {
+    flex: 1; overflow-y: auto; padding: 22px 20px;
+    display: flex; flex-direction: column; gap: 18px;
+  }
+  .messages::-webkit-scrollbar { width: 8px; }
+  .messages::-webkit-scrollbar-thumb { background: var(--line); border-radius: 8px; }
+
+  .msg { display: flex; gap: 10px; max-width: 92%; }
+  .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+  .msg.bot { align-self: flex-start; }
+  .avatar {
+    width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: #fff;
+  }
+  .avatar.bot { background: linear-gradient(135deg, var(--primary), var(--primary-2)); }
+  .avatar.user { background: #9aa3b5; }
+  .bubble {
+    padding: 11px 14px; border-radius: 14px; line-height: 1.65;
+    font-size: 14.5px; white-space: pre-wrap; word-break: break-word;
+  }
+  .msg.user .bubble { background: var(--user-bubble); color: #fff; border-bottom-right-radius: 4px; }
+  .msg.bot .bubble { background: var(--bot-bubble); border-bottom-left-radius: 4px; }
+
+  .sources {
+    margin-top: 8px; border-top: 1px dashed var(--line); padding-top: 7px;
+    font-size: 11.5px; color: var(--muted); line-height: 1.5;
+  }
+  .sources summary { cursor: pointer; color: var(--primary); font-weight: 600; }
+  .sources .src { margin: 5px 0 0; padding-left: 10px; border-left: 2px solid var(--line); }
+  .src .fname { color: var(--text); font-weight: 600; }
+
+  .caret {
+    display: inline-block; width: 7px; height: 15px; vertical-align: -2px;
+    background: var(--primary); margin-left: 1px; border-radius: 1px;
+    animation: blink 1s steps(2, start) infinite;
+  }
+  @keyframes blink { to { visibility: hidden; } }
+
+  .composer {
+    border-top: 1px solid var(--line); background: var(--panel);
+    padding: 14px 16px; display: flex; gap: 10px; align-items: flex-end;
+  }
+  textarea {
+    flex: 1; resize: none; border: 1px solid var(--line); background: var(--bg);
+    color: var(--text); border-radius: 12px; padding: 11px 13px;
+    font: inherit; font-size: 14.5px; max-height: 140px; line-height: 1.5;
+    outline: none;
+  }
+  textarea:focus { border-color: var(--primary); }
+  button.send {
+    border: none; border-radius: 12px; padding: 0 18px; height: 44px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-2));
+    color: #fff; font-size: 14px; font-weight: 650; cursor: pointer;
+    transition: opacity .15s; flex-shrink: 0;
+  }
+  button.send:disabled { opacity: .5; cursor: not-allowed; }
+  .hint { font-size: 11px; color: var(--muted); padding: 0 4px 2px; }
+</style>
+</head>
+<body data-page-node-id="YdOERXkB0yQZDgfiJOfYDt">
+<div class="app" data-page-node-id="pnNZC8aXsDDHVnbjQBjZri">
+  <header data-page-node-id="DDqTHJ3wPA3ELOEvcM4al2">
+    <div class="logo" data-page-node-id="XS6EEC7LruHtFDdmNx7YcJ">H</div>
+    <div data-page-node-id="afoA2Kw7fchKhk9CNe3TjU">
+      <div class="title" data-page-node-id="LNraNkQPTcg4KO7LDTxSZf">HelloAgents · RAG 智能问答</div>
+      <div class="subtitle" data-page-node-id="kQgRTCtcT4fFXjSdJrEjf0">基于自建 HybridRAG（字面 + 语义 + RRF 融合）</div>
+    </div>
+    <div class="status" data-page-node-id="Q8r8VLrGaJfpAmiHxWCKOo">
+      <span class="dot" id="dot" data-page-node-id="ll7r86UsD2cuBApor5OPFo"></span>
+      <span id="statusText" data-page-node-id="bn6DmLS8HexU9lpKIEeTqh">连接中…</span>
+    </div>
+  </header>
+
+  <div class="messages" id="messages" data-page-node-id="ldoY6TZPrGKvHGyi4tm6Us">
+    <div class="msg bot" data-page-node-id="7TJduzTQKNaaxGG7PGjU72">
+      <div class="avatar bot" data-page-node-id="wWDn9ZvtZHyoH5Us83h7O9">H</div>
+      <div class="bubble" data-page-node-id="hb1qYO6Rem5yFtHrdQDwkW">你好，我是基于你论文《人机共生》知识库搭建的 RAG 问答助手。试着问我："论文里人工智能面临哪些伦理风险？"</div>
+    </div>
+  </div>
+
+  <div class="composer" data-page-node-id="plVVMqaITKZPrj3c6tAVQi">
+    <div style="flex:1" data-page-node-id="59nyJ5ZORV3B38hFGG0gsj">
+      <div class="hint" data-page-node-id="LeDgkyeyXrd85tZgArgig8">Enter 发送 · Shift+Enter 换行</div>
+      <textarea id="input" rows="1" placeholder="输入你的问题…"></textarea>
+    </div>
+    <button class="send" id="sendBtn" data-page-node-id="7nfPTRNWbNEp3WtrqNKzGD">发送</button>
+  </div>
+</div>
+
+<script>
+const messagesEl = document.getElementById('messages');
+const inputEl = document.getElementById('input');
+const sendBtn = document.getElementById('sendBtn');
+const dotEl = document.getElementById('dot');
+const statusText = document.getElementById('statusText');
+
+// 拉一次 /health 显示知识库大小
+fetch('/health').then(r => r.json()).then(d => {
+  dotEl.classList.add('on');
+  statusText.textContent = '已就绪 · 知识库 ' + (d.rag_chunks ?? '?') + ' 块';
+}).catch(() => {
+  statusText.textContent = '服务未连接';
+});
+
+function scrollBottom() { messagesEl.scrollTop = messagesEl.scrollHeight; }
+
+function addUserMsg(text) {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg user';
+  wrap.innerHTML = '<div class="avatar user">我</div><div class="bubble"></div>';
+  wrap.querySelector('.bubble').textContent = text;
+  messagesEl.appendChild(wrap);
+  scrollBottom();
+}
+
+function addBotMsg() {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg bot';
+  wrap.innerHTML =
+    '<div class="avatar bot">H</div>' +
+    '<div><div class="bubble"><span class="caret"></span></div><div class="sources" hidden></div></div>';
+  messagesEl.appendChild(wrap);
+  const bubble = wrap.querySelector('.bubble');
+  const sourcesEl = wrap.querySelector('.sources');
+  scrollBottom();
+  return { bubble, sourcesEl, streaming: true };
+}
+
+function showSources(sourcesEl, meta) {
+  const sources = meta.sources || [];
+  if (!sources.length) return;
+  sourcesEl.hidden = false;
+  const items = sources.map((s, i) => {
+    const fname = (s.file || s.source || '未知来源');
+    const snippet = s.text ? s.text.slice(0, 90) + (s.text.length > 90 ? '…' : '') : '';
+    return '<div class="src"><span class="fname">[' + (i + 1) + '] ' + fname + '</span>' +
+           (snippet ? '<br>' + snippet : '') + '</div>';
+  }).join('');
+  sourcesEl.innerHTML = '<details open><summary>引用资料（' + sources.length + ' 段）</summary>' + items + '</details>';
+}
+
+function finishStream(bot) {
+  bot.streaming = false;
+  const caret = bot.bubble.querySelector('.caret');
+  if (caret) caret.remove();
+  scrollBottom();
+}
+
+async function send() {
+  const q = inputEl.value.trim();
+  if (!q || sendBtn.disabled) return;
+  addUserMsg(q);
+  inputEl.value = '';
+  autoGrow();
+  sendBtn.disabled = true;
+  const bot = addBotMsg();
+
+  try {
+    const resp = await fetch('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: q })
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const line of lines) {
+        const t = line.trim();
+        if (!t.startsWith('data:')) continue;
+        const raw = t.slice(5).trim();
+        if (raw === '[DONE]') { finishStream(bot); continue; }
+        try {
+          const obj = JSON.parse(raw);
+          if (obj && typeof obj === 'object' && obj.type === 'meta') {
+            showSources(bot.sourcesEl, obj);
+          } else if (typeof obj === 'string') {
+            appendText(bot, obj);
+          }
+        } catch (e) {
+          appendText(bot, raw); // 兜底：非 JSON 当纯文本
+        }
+      }
+    }
+  } catch (err) {
+    bot.bubble.textContent = '⚠️ 请求失败：' + err.message +
+      '\n（请确认后端服务已在 127.0.0.1:8000 运行）';
+  } finally {
+    finishStream(bot);
+    sendBtn.disabled = false;
+    inputEl.focus();
+  }
+}
+
+function appendText(bot, text) {
+  // 移除旧光标，追加文本，再加回光标
+  const caret = bot.bubble.querySelector('.caret');
+  if (caret) caret.remove();
+  bot.bubble.appendChild(document.createTextNode(text));
+  const c = document.createElement('span');
+  c.className = 'caret';
+  bot.bubble.appendChild(c);
+  scrollBottom();
+}
+
+function autoGrow() {
+  inputEl.style.height = 'auto';
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 140) + 'px';
+}
+
+sendBtn.addEventListener('click', send);
+inputEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+});
+inputEl.addEventListener('input', autoGrow);
+inputEl.focus();
+</script>
+</body>
+</html>
