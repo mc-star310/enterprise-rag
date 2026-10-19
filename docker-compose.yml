@@ -1,0 +1,53 @@
+# 企业级 RAG 知识库 - 一键编排（应用 + 可选 Ollama 语义嵌入）
+#
+# 用法：
+#   1. 准备密钥：复制 .env.example 为 .env，填入 DEEPSEEK_API_KEY
+#   2. 只跑应用（纯 TF-IDF 检索，无需 GPU）：        docker compose up -d kb
+#   3. 启用语义检索（连容器内的 Ollama）：            docker compose up -d
+#      # 首次使用语义需先拉模型（一次性）：
+#      docker compose exec ollama ollama pull bge-m3
+#      # 然后让应用走语义路：在 .env 里加一行   RAG_EMBEDDING=ollama
+#      # 重启应用：docker compose restart kb
+#
+# 访问：http://localhost:8001
+
+services:
+  kb:
+    build: .
+    image: enterprise-rag:latest
+    container_name: enterprise-rag
+    ports:
+      - "8001:8001"
+    environment:
+      # 密钥从宿主机 .env 读（文件已在 .gitignore，不会上传）
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
+      # 默认纯 TF-IDF；在 .env 写 RAG_EMBEDDING=ollama 即可切语义路
+      - RAG_EMBEDDING=${RAG_EMBEDDING:-tfidf}
+      # 容器内访问 Ollama 用服务名
+      - OLLAMA_BASE_URL=http://ollama:11434
+    env_file:
+      - .env
+    depends_on:
+      - ollama
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: enterprise-rag-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    # 可选：启用 GPU 加速（需 Docker Desktop + NVIDIA 容器工具包）
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+    restart: unless-stopped
+
+volumes:
+  ollama_data:

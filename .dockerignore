@@ -1,0 +1,21 @@
+# 密钥 / 环境（绝不进镜像）
+.env
+*.env
+
+# 本地虚拟环境 / Python 缓存
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Git / 编辑器 / 系统
+.git/
+.gitignore
+.idea/
+.vscode/
+
+# 日志 / 杂项
+*.log
+.ghconfig/
+.DS_Store

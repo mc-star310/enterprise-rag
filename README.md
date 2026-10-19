@@ -81,6 +81,46 @@ cp .env.example .env
 
 ---
 
+## Docker 部署（私有化）
+
+无需在本机装 Python 环境，一条命令起服务，文档与代码都不出本地。
+
+### 方式一：纯应用镜像（最快，纯 TF-IDF 检索）
+
+```bash
+# 1. 准备密钥：复制 .env.example 为 .env，填入 DEEPSEEK_API_KEY
+cp .env.example .env
+
+# 2. 构建并后台启动
+docker build -t enterprise-rag .
+docker run -d --name enterprise-rag -p 8001:8001 \
+  -e DEEPSEEK_API_KEY=$(cat .env | grep DEEPSEEK_API_KEY | cut -d= -f2) \
+  enterprise-rag
+
+# 3. 浏览器打开 http://localhost:8001
+```
+
+> 容器内默认 `RAG_EMBEDDING=tfidf`——不依赖任何嵌入服务，开箱即跑（只匹配字面，不理解语义）。
+> 想让容器直接走语义路，构建/运行时加 `-e RAG_EMBEDDING=ollama` 并让 `OLLAMA_BASE_URL` 指向你的 Ollama。
+
+### 方式二：docker compose（应用 + 可选 Ollama，一条命令起全套）
+
+```bash
+# 只跑应用（纯 TF-IDF）：
+docker compose up -d kb
+
+# 连容器内 Ollama 启用语义检索（首次需拉模型，一次性）：
+docker compose up -d
+docker compose exec ollama ollama pull bge-m3
+# 在 .env 里加 RAG_EMBEDDING=ollama 后：docker compose restart kb
+```
+
+访问 `http://localhost:8001`。`/health` 端点可用于健康检查与容器编排探活。
+
+> ⚠️ `DEEPSEEK_API_KEY` 必须提供，否则应用在构造 LLM 时会报错退出（已在 Dockerfile 的 HEALTHCHECK 与启动逻辑中体现）。密钥仅来自 `.env` / 运行时 `-e`，**绝不写进镜像**。
+
+---
+
 ## 目录结构
 
 ```
