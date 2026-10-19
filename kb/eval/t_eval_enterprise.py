@@ -23,6 +23,20 @@ sys.path.insert(0, ROOT)
 
 from kb.ingest import build_rag  # noqa: E402
 
+
+class _StubLLM:
+    """评测只用到检索（retrieve），不调用大模型，给一个假对象即可绕过 key 校验。
+
+    这样 CI 在没有 DEEPSEEK_API_KEY / 没有本地 Ollama 时也能跑通评测。
+    """
+
+    def invoke(self, messages, **kwargs):
+        raise NotImplementedError("评测只用到检索，不应调用 llm")
+
+    def stream_invoke(self, messages, **kwargs):
+        raise NotImplementedError("评测只用到检索，不应调用 llm")
+
+
 CORPUS = os.path.join(ROOT, "kb", "corpus")
 KS = (1, 3, 5)
 
@@ -126,7 +140,7 @@ def evaluate(rag):
 
 def main():
     print("========== 构建企业知识库索引 ==========")
-    rag = build_rag(CORPUS)
+    rag = build_rag(CORPUS, llm=_StubLLM())
     st = rag.stats()
     mode = "混合(含语义嵌入)" if st.get("dim") and st.get("dim") != 782 else "纯 TF-IDF(已降级)"
     print(f"索引：{st['chunks']} 块 | 嵌入模式：{mode}")

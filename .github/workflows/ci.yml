@@ -1,0 +1,34 @@
+name: CI
+
+# 在 push 到 main 或开 PR 时自动跑：安装依赖 → 跑检索评测
+# 评测只读检索（retrieve），不调大模型，因此不需要任何密钥即可运行。
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  retrieval-eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # CI 跑「纯字面（TF-IDF）基线」：确定性、无外部依赖、秒级完成。
+      # 完整「混合检索（含语义嵌入）」需要本地 Ollama + bge-m3，
+      # 在本机手动 `ollama serve` 后运行 `python -m kb.eval.t_eval_enterprise` 即可。
+      - name: Run retrieval evaluation (TF-IDF baseline)
+        env:
+          RAG_EMBEDDING: tfidf
+        run: |
+          python -m kb.eval.t_eval_enterprise

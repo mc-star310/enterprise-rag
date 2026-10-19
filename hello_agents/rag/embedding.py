@@ -121,6 +121,14 @@ def create_embedding_with_fallback(prefer: str = "ollama") -> BaseEmbedding:
     这样写的好处：上层代码只管拿一个 embedding 对象来用，
     至于背后是本地 Ollama 还是云端 API，它不需要关心。
     """
+    # 允许通过环境变量强制指定嵌入方案（CI / 纯字面基线 / 无 GPU 场景）
+    forced = (os.getenv("RAG_EMBEDDING") or "").lower()
+    if forced in ("tfidf", "lexical", "none"):
+        print("⚠️ 使用 TF-IDF 兜底嵌入（RAG_EMBEDDING=%s）" % forced)
+        return TFIDFEmbedding()
+    if forced in ("ollama", "bge-m3"):
+        prefer = "ollama"
+
     if prefer == "ollama":
         try:
             emb = OllamaEmbedding()
