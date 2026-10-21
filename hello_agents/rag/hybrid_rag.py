@@ -167,8 +167,8 @@ class HybridRAG:
         return self._rrf_merge(lex, sem, k)
 
     # ---------- 第 3 步：生成（和前两版一致）----------
-    def ask(self, question: str, with_sources: bool = True) -> str:
-        hits = self.retrieve(question)
+    def ask(self, question: str, with_sources: bool = True, hits: list = None) -> str:
+        hits = hits or self.retrieve(question)
         if not hits:
             return "知识库里没有找到相关内容，无法回答。"
 

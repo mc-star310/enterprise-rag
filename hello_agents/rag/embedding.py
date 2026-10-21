@@ -51,15 +51,18 @@ class OllamaEmbedding(BaseEmbedding):
         2. 已拉取嵌入模型：ollama pull bge-m3
     """
 
-    def __init__(self, model: str = "bge-m3", base_url: str = "http://localhost:11434"):
+    def __init__(self, model: str = "bge-m3", base_url: str = "http://127.0.0.1:11434"):
         self.model = model
         self.base_url = base_url.rstrip("/")
 
     def embed(self, texts: List[str]) -> List[List[float]]:
+        # 本地 Ollama 服务不应走任何 HTTP 代理（沙箱/企业网常注入 HTTP_PROXY，
+        # 会把 localhost 请求转发到代理导致 502）；云端嵌入走专有的 OpenAICompatibleEmbedding。
         resp = requests.post(
             f"{self.base_url}/api/embed",
             json={"model": self.model, "input": texts},
             timeout=60,
+            proxies={"http": None, "https": None},
         )
         resp.raise_for_status()
         return resp.json()["embeddings"]
